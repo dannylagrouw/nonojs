@@ -1,0 +1,10 @@
+{
+  "name"         : "nonojs",
+  "version"      : "0.0.1",
+  "description"  : "Nono JS",
+  "main"         : "server.js",
+  "author"       : "danny.lagrouw@gmail.com",
+  "dependencies" : {
+    "express"         : "~4.6.1"
+  }
+}
