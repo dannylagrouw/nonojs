@@ -5,8 +5,14 @@
 <body ng-app="nono" ng-controller="NonoController" ng-init="init()">
 <h1>Nono</h1>
 
-<canvas id="cnv" width="800" height="800" ng-click="clicked($event)"></canvas>
+<canvas id="cnv" width="1000" height="1000" ng-click="clicked($event)"></canvas>
 
+<div>{{data.time}}</div>
+
+<div ng-show="data.solved">
+  <div>You solved the board!</div>
+  <button ng-click="init()">Play Again</button>
+</div>
 <script src="vendor/angularjs/angular.min.js"></script>
 <script src="js/nono.js"></script>
 </body>

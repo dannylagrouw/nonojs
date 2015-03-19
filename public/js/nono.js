@@ -93,7 +93,7 @@ angular.module('nono', [])
     function Board(size, transformation) {
       var self = this;
       this.size = size;
-      var DENSITY = 0.4;
+      var DENSITY = 0.6;
 
       this.cells = (function() {
         var cells = new Array(size);
@@ -149,6 +149,19 @@ angular.module('nono', [])
           return strips;
         })());
       };
+
+      this.isRowSolved = function(rowNum) {
+        return this.getRows().strips[rowNum].isSolved();
+      };
+
+      this.isColumnSolved = function(colNum) {
+        return this.getColumns().strips[colNum].isSolved();
+      };
+
+      this.isSolved = function() {
+        return this.getRows().isSolved() && this.getColumns().isSolved();
+      };
+
     }
 
     function MoveTransformation(board, cellStatus, row, col) {
@@ -162,6 +175,18 @@ angular.module('nono', [])
       };
     }
 
+    function AutoFillSolvedTransformation(board) {
+      this.getCell = function(row, col) {
+        if (board.isRowSolved(row) && board.cells[row][col].status === CellStatus.EMPTY) {
+          return Cell.withStatus(board.cells[row][col], CellStatus.BLANKED);
+        } else if (board.isColumnSolved(col) && board.cells[row][col].status === CellStatus.EMPTY) {
+          return Cell.withStatus(board.cells[row][col], CellStatus.BLANKED);
+        } else {
+          return board.cells[row][col];
+        }
+      };
+    }
+
     function CanvasBoardRenderer(ctx) {
       var self = this;
       this.ctx = ctx;
@@ -170,20 +195,15 @@ angular.module('nono', [])
       var CELL_SPACING = 3;
 
       function CanvasCell(cell, indent, leading) {
-        var self = this;
-        this.cell = cell;
-        this.indent = indent;
-        this.leading = leading;
-
         this.draw = function() {
-          ctx.clearRect(cell.col * (CELL_SIZE + CELL_SPACING) + indent, cell.row * (CELL_SIZE + CELL_SPACING) + leading, CELL_SIZE, CELL_SIZE);
-          ctx.strokeRect(cell.col * (CELL_SIZE + CELL_SPACING) + indent, cell.row * (CELL_SIZE + CELL_SPACING) + leading, CELL_SIZE, CELL_SIZE);
+          var x1 = cell.col * (CELL_SIZE + CELL_SPACING) + indent;
+          var y1 = cell.row * (CELL_SIZE + CELL_SPACING) + leading;
+          ctx.clearRect(x1, y1, CELL_SIZE, CELL_SIZE);
+          ctx.strokeRect(x1, y1, CELL_SIZE, CELL_SIZE);
           if (cell.status === CellStatus.CROSSED) {
-            ctx.fillRect(cell.col * (CELL_SIZE + CELL_SPACING) + indent, cell.row * (CELL_SIZE + CELL_SPACING) + leading, CELL_SIZE, CELL_SIZE);
+            ctx.fillRect(x1, y1, CELL_SIZE, CELL_SIZE);
           } else if (cell.status === CellStatus.BLANKED) {
-            var x1 = cell.col * (CELL_SIZE + CELL_SPACING) + indent;
             var x2 = x1 + CELL_SIZE;
-            var y1 = cell.row * (CELL_SIZE + CELL_SPACING) + leading;
             var y2 = y1 + CELL_SIZE;
             ctx.beginPath();
             ctx.moveTo(x1, y1);
@@ -199,9 +219,11 @@ angular.module('nono', [])
         };
 
         this.drawSolution = function() {
-          ctx.strokeRect(cell.col * (CELL_SIZE + CELL_SPACING) + indent, cell.row * (CELL_SIZE + CELL_SPACING) + leading, CELL_SIZE, CELL_SIZE);
+          var x = cell.col * (CELL_SIZE + CELL_SPACING) + indent;
+          var y = cell.row * (CELL_SIZE + CELL_SPACING) + leading;
+          ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
           if (cell.solution === CellStatus.FILLED) {
-            ctx.fillRect(cell.col * (CELL_SIZE + CELL_SPACING) + indent, cell.row * (CELL_SIZE + CELL_SPACING) + leading, CELL_SIZE, CELL_SIZE);
+            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
           }
         };
       }
@@ -236,26 +258,29 @@ angular.module('nono', [])
         })
       };
 
+      this.renderGridLines = function(board, indent, leading) {
+        ctx.strokeStyle = '#990099';
+        for (var col = 5; col < board.size; col += 5) {
+          var x = indent + (col * (CELL_SIZE + CELL_SPACING)) - (CELL_SPACING / 2);
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, leading + (board.size * (CELL_SIZE + CELL_SPACING)) - CELL_SPACING);
+          ctx.stroke();
+          ctx.closePath();
+        }
+        for (var row = 5; row < board.size; row += 5) {
+          var y = leading + (row * (CELL_SIZE + CELL_SPACING)) - (CELL_SPACING / 2);
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(indent + (board.size * (CELL_SIZE + CELL_SPACING)) - CELL_SPACING, y);
+          ctx.stroke();
+          ctx.closePath();
+        }
+        ctx.strokeStyle = '#000000';
+      };
+
       this.render = function(board, cellRenderer) {
         var ctx = self.ctx;
-        //ctx.strokeRect(0, 0, 30, 30);
-        //
-        //ctx.strokeRect(30, 0, 30, 30);
-        //
-        //ctx.beginPath();
-        //ctx.moveTo(30, 0);
-        //ctx.lineTo(60, 30);
-        //ctx.stroke();
-        //ctx.closePath();
-        //ctx.beginPath();
-        //ctx.moveTo(60, 0);
-        //ctx.lineTo(30, 30);
-        //ctx.stroke();
-        //ctx.closePath();
-        //
-        //ctx.strokeRect(60, 0, 30, 30);
-        //ctx.fillRect(60, 0, 30, 30);
-
         ctx.font = "bold 16px Arial";
 
         var rows = board.getRows();
@@ -284,19 +309,27 @@ angular.module('nono', [])
           .forEach(function(canvasCell) {
             cellRenderer(canvasCell);
           });
+
+        this.renderGridLines(board, indent, leading);
       };
     }
 
     $scope.data = {
       board: undefined,
-      renderer: undefined
+      renderer: undefined,
+      autoFillSolved: true,
+      solved: false,
+      startTime: 0,
+      time: ''
     };
 
     $scope.init = function() {
+      $scope.data.solved = false;
       var canvas = document.getElementById('cnv');
       var ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      $scope.data.board = new Board(10);
+      $scope.data.board = new Board(20);
       console.log($scope.data.board.cells);
       console.log($scope.data.board.getColumns());
       console.log($scope.data.board.getColumns().getMaxGroupCount());
@@ -305,6 +338,18 @@ angular.module('nono', [])
       });
       $scope.data.renderer = new CanvasBoardRenderer(ctx);
       $scope.data.renderer.renderPlay($scope.data.board);
+      $scope.data.startTime = new Date().getTime();
+      var timer;
+      timer = window.setInterval(function() {
+        if ($scope.data.solved) {
+          window.clearInterval(timer);
+        } else {
+          var sec = (new Date().getTime() - $scope.data.startTime) / 1000;
+          var sec2 = Math.floor(sec % 60);
+          $scope.data.time = Math.floor(sec / 60) + ':' + (sec2 < 10 ? '0' : '') + sec2;
+          $scope.$apply();
+        }
+      }, 1000);
     };
 
     $scope.clicked = function(event) {
@@ -313,7 +358,13 @@ angular.module('nono', [])
       var row = $scope.data.renderer.toRow($scope.data.board, event.offsetY);
       var status = (event.shiftKey ? CellStatus.BLANKED : (event.altKey ? CellStatus.EMPTY : CellStatus.CROSSED));
       $scope.data.board = new Board($scope.data.board.size, new MoveTransformation($scope.data.board, status, row, col));
+      if ($scope.data.autoFillSolved) {
+        $scope.data.board = new Board($scope.data.board.size, new AutoFillSolvedTransformation($scope.data.board));
+      }
       $scope.data.renderer.renderPlay($scope.data.board);
+      if ($scope.data.board.isSolved()) {
+        $scope.data.solved = true;
+      }
     };
 
   }]);
