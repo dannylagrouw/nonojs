@@ -1,4 +1,57 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  font-family: sans-serif;
+}
+
 #cnv {
   border: solid 1px black;
   margin: 20px;
+}
+
+#cnv-tmp {
+  height: calc(100vh - 70px);
+}
+
+#nav {
+  width: calc(100% - 8px);
+  height: 22px;
+  max-height: 30px;
+  background-color: seagreen;
+  color: white;
+  font-size: 16px;
+  line-height: 16px;
+  padding: 8px 4px 0 4px;
+}
+
+#nav * {
+  display: inline-block;
+  margin: 0;
+}
+
+#nav h1 {
+  padding: 0;
+  font-size: 18px;
+  line-height: 16px;
+}
+
+#nav button {
+  margin-top: -8px;
+  background: linear-gradient(#3db36e, seagreen);
+  border: none;
+  color: white;
+  outline: none;
+}
+
+#timer {
+  float: right;
+}
+
+#fixStatus {
+  margin-top: -8px;
+  background-color: #3db36e;
 }

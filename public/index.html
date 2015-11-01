@@ -1,18 +1,28 @@
-<html>
+<html id="app">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link rel="stylesheet" href="css/nono.css">
 </head>
 <body ng-app="nono" ng-controller="NonoController" ng-init="init()">
-<h1>Nono</h1>
-
-<canvas id="cnv" width="1000" height="1000" ng-click="clicked($event)"></canvas>
-
-<div>{{data.time}}</div>
-
-<div ng-show="data.solved">
-  <div>You solved the board!</div>
-  <button ng-click="init()">Play Again</button>
+<div id="nav">
+  <h1>Nono</h1>
+  <button ng-click="goFullScreen()" ng-hide="isFullScreen">Full Screen</button>
+  <div ng-show="data.solved">
+    <div>You solved the board!</div>
+    <button ng-click="init()">Play Again</button>
+  </div>
+  <div ng-hide="data.solved">
+    <button ng-click="init()">New Game</button>
+  </div>
+  <div>{{data.fixStatus}}</div>
+  <canvas id="fixStatus" width="16" height="16"></canvas>
+  <div id="timer">{{data.time}}</div>
 </div>
+
+<canvas id="cnv" width="800" ng-click="clicked($event)"></canvas>
+
+
 <script src="vendor/angularjs/angular.min.js"></script>
 <script src="js/nono.js"></script>
 </body>
